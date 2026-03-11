@@ -1,0 +1,1593 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LangGraph Dev API Tester (multi_agent)</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --panel: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --accent: #16a34a;
+      --warn: #d97706;
+      --err: #dc2626;
+      --c-updates: #0284c7;
+      --c-values: #7c3aed;
+      --c-messages: #0891b2;
+      --c-events: #0d9488;
+      --c-metadata: #94a3b8;
+      --c-debug: #9333ea;
+      --c-error: #dc2626;
+      --c-end: #16a34a;
+      --c-custom: #ea580c;
+      --c-default: #475569;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top bar ── */
+    #topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    #topbar h1 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      white-space: nowrap;
+    }
+
+    #topbar .hint {
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+
+    #topbar .hint code {
+      background: #f1f5f9;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      padding: 0 4px;
+      font-size: 11px;
+    }
+
+    /* ── Split layout ── */
+    #split {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      gap: 0;
+    }
+
+    /* ── Left panel ── */
+    #left {
+      width: 380px;
+      min-width: 280px;
+      max-width: 520px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    /* Resize handle */
+    #resizer {
+      width: 5px;
+      cursor: col-resize;
+      background: transparent;
+      flex-shrink: 0;
+      transition: background .15s;
+      z-index: 10;
+    }
+
+    #resizer:hover,
+    #resizer.dragging {
+      background: #bfdbfe;
+    }
+
+    /* ── Right panel ── */
+    #right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* ── Section headers ── */
+    .sec-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .sec-header .badge-count {
+      background: #e2e8f0;
+      border-radius: 10px;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      margin-left: auto;
+    }
+
+    /* ── Config section (left top) ── */
+    #configSection {
+      flex-shrink: 0;
+      overflow-y: auto;
+      border-bottom: 1px solid var(--line);
+    }
+
+    #configInner {
+      padding: 10px 12px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-bottom: 8px;
+    }
+
+    .field {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      display: block;
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      padding: 5px 8px;
+      font-size: 12.5px;
+      outline: none;
+      transition: border-color .15s;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: #93c5fd;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 56px;
+      font-family: inherit;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 7px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: background .12s;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: #f1f5f9;
+    }
+
+    button.primary {
+      border-color: #86efac;
+      background: #f0fdf4;
+      color: #166534;
+    }
+
+    button.primary:hover {
+      background: #dcfce7;
+    }
+
+    button.warn-btn {
+      border-color: #fcd34d;
+      background: #fffbeb;
+      color: #92400e;
+    }
+
+    button.warn-btn:hover {
+      background: #fef3c7;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    #status {
+      padding: 7px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    #status.ok {
+      color: var(--accent);
+      background: #f0fdf4;
+    }
+
+    #status.warn {
+      color: var(--warn);
+      background: #fffbeb;
+    }
+
+    #status.err {
+      color: var(--err);
+      background: #fff1f2;
+    }
+
+    /* ── Agent output (left bottom) ── */
+    #agentSection {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    #agentOut {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 12px;
+    }
+
+    /* Agent message bubble */
+    .agent-msg {
+      margin-bottom: 10px;
+      animation: fadeIn .2s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .agent-msg .msg-role {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: 3px;
+    }
+
+    .agent-msg.user .msg-role {
+      color: #2563eb;
+    }
+
+    .agent-msg.ai .msg-role {
+      color: #16a34a;
+    }
+
+    .agent-msg.tool .msg-role {
+      color: #d97706;
+    }
+
+    .agent-msg.system .msg-role {
+      color: #9333ea;
+    }
+
+    .agent-msg .msg-bubble {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 0 8px 8px 8px;
+      padding: 8px 10px;
+      font-size: 12.5px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .agent-msg.user .msg-bubble {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      border-radius: 8px 0 8px 8px;
+    }
+
+    .agent-msg.ai .msg-bubble {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .agent-msg.tool .msg-bubble {
+      background: #fffbeb;
+      border-color: #fde68a;
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 11.5px;
+    }
+
+    .agent-msg.system .msg-bubble {
+      background: #faf5ff;
+      border-color: #e9d5ff;
+    }
+
+    /* Step/node timeline */
+    .step-item {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+      align-items: flex-start;
+      animation: fadeIn .15s ease;
+    }
+
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+
+    .step-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .step-node {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0284c7;
+      margin-bottom: 2px;
+    }
+
+    .step-keys {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* streaming cursor */
+    .stream-cursor::after {
+      content: "▋";
+      animation: blink .7s step-end infinite;
+      color: #16a34a;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .agent-empty {
+      text-align: center;
+      padding: 30px 16px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* ── Right: SSE events ── */
+    #logToolbar {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    #logToolbar .lbl {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-right: 2px;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+
+    .filter-btn {
+      border: 1px solid transparent;
+      border-radius: 4px;
+      padding: 2px 7px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: var(--muted);
+      transition: all .1s;
+    }
+
+    .filter-btn.active {
+      color: #fff;
+    }
+
+    .filter-btn[data-type="updates"].active {
+      background: var(--c-updates);
+      border-color: var(--c-updates);
+    }
+
+    .filter-btn[data-type="values"].active {
+      background: var(--c-values);
+      border-color: var(--c-values);
+    }
+
+    .filter-btn[data-type="messages"].active {
+      background: var(--c-messages);
+      border-color: var(--c-messages);
+    }
+
+    .filter-btn[data-type="events"].active {
+      background: var(--c-events);
+      border-color: var(--c-events);
+    }
+
+    .filter-btn[data-type="metadata"].active {
+      background: var(--c-metadata);
+      border-color: var(--c-metadata);
+    }
+
+    .filter-btn[data-type="debug"].active {
+      background: var(--c-debug);
+      border-color: var(--c-debug);
+    }
+
+    .filter-btn[data-type="error"].active {
+      background: var(--c-error);
+      border-color: var(--c-error);
+    }
+
+    .filter-btn[data-type="end"].active {
+      background: var(--c-end);
+      border-color: var(--c-end);
+    }
+
+    .filter-btn[data-type="custom"].active {
+      background: var(--c-custom);
+      border-color: var(--c-custom);
+    }
+
+    .filter-btn[data-type="other"].active {
+      background: var(--c-default);
+      border-color: var(--c-default);
+    }
+
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11.5px;
+      line-height: 1.45;
+      background: #fafafa;
+    }
+
+    /* ── Event card ── */
+    .evt-card {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      margin-bottom: 6px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .evt-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      cursor: pointer;
+      user-select: none;
+      background: #f8fafc;
+    }
+
+    .evt-header:hover {
+      background: #f1f5f9;
+    }
+
+    .evt-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      flex-shrink: 0;
+    }
+
+    .evt-num {
+      font-size: 10px;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+
+    .evt-summary {
+      font-size: 11px;
+      color: #475569;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .evt-arrow {
+      font-size: 10px;
+      color: #94a3b8;
+      flex-shrink: 0;
+      transition: transform .12s;
+    }
+
+    .evt-arrow.open {
+      transform: rotate(90deg);
+    }
+
+    .evt-body {
+      display: none;
+      padding: 7px 8px;
+      background: #fafafa;
+      border-top: 1px solid var(--line);
+    }
+
+    .evt-body.open {
+      display: block;
+    }
+
+    .msg-tokens {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 5px;
+      padding: 5px 8px;
+      margin-bottom: 5px;
+      font-size: 11.5px;
+      color: #0369a1;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .json-block {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: 6px 8px;
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #334155;
+      overflow: auto;
+      max-height: 360px;
+    }
+
+    .http-line {
+      padding: 1px 3px;
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-bottom: 2px;
+    }
+
+    .http-line.req {
+      color: #94a3b8;
+    }
+
+    .http-line.resp {
+      color: #0369a1;
+    }
+
+    .http-line.info {
+      color: #94a3b8;
+      font-style: italic;
+    }
+
+    .http-line.err {
+      color: var(--err);
+    }
+
+    .foot {
+      padding: 5px 12px;
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--panel);
+      border-top: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    .foot code {
+      background: #f1f5f9;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      padding: 0 4px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Top bar -->
+  <div id="topbar">
+    <h1>LangGraph Dev API Tester — multi_agent</h1>
+    <div class="hint">
+      Calls <code>POST /threads/{thread_id}/runs/stream</code> &nbsp;·&nbsp; SSE events with type-aware highlighting
+    </div>
+  </div>
+
+  <!-- Split layout -->
+  <div id="split">
+
+    <!-- ═══ LEFT PANEL ═══ -->
+    <div id="left">
+
+      <!-- Config section (top) -->
+      <div id="configSection">
+        <div class="sec-header">⚙ Configuration</div>
+        <div id="configInner">
+          <div class="grid">
+            <div class="field">
+              <label for="baseUrl">Base URL</label>
+              <input id="baseUrl" value="http://127.0.0.1:2024" />
+            </div>
+            <div class="field">
+              <label for="graphId">Graph ID</label>
+              <input id="graphId" value="multi_agent" />
+            </div>
+            <div class="field">
+              <label for="assistantId">Assistant UUID (optional)</label>
+              <input id="assistantId" placeholder="Leave empty → graph_id" />
+            </div>
+            <div class="field">
+              <label for="threadId">Thread ID (auto if empty)</label>
+              <input id="threadId" placeholder="e.g. t-dev-001" />
+            </div>
+            <div class="field">
+              <label for="userId">User ID</label>
+              <input id="userId" value="u1" />
+            </div>
+            <div class="field">
+              <label for="streamMode">stream_mode (comma sep)</label>
+              <input id="streamMode" value="updates,events,messages-tuple" />
+            </div>
+            <div class="field full">
+              <label for="prompt">User Prompt</label>
+              <textarea id="prompt">请结合知识库和SQL说明企业多agent系统的推荐结构.</textarea>
+            </div>
+            <div class="field full">
+              <label for="authToken">Bearer Token (optional)</label>
+              <input id="authToken" placeholder="Paste token without 'Bearer '" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button id="btnCreateThread">Create Thread</button>
+            <button id="btnRun" class="primary">▶ Start Run</button>
+            <button id="btnStop" class="warn-btn" disabled>■ Stop</button>
+            <button id="btnClearAll">Clear All</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="status">Idle</div>
+
+      <!-- Agent output section (bottom) -->
+      <div id="agentSection">
+        <div class="sec-header">
+          💬 Agent Output
+          <span class="badge-count" id="msgCount">0</span>
+        </div>
+        <div id="agentOut">
+          <div class="agent-empty" id="agentEmpty">Agent output will appear here during stream…</div>
+        </div>
+      </div>
+
+    </div><!-- /left -->
+
+    <!-- Resize handle -->
+    <div id="resizer"></div>
+
+    <!-- ═══ RIGHT PANEL ═══ -->
+    <div id="right">
+      <div id="logToolbar">
+        <span class="lbl">Filter:</span>
+        <button class="filter-btn active" data-type="all">All</button>
+        <button class="filter-btn active" data-type="updates">updates</button>
+        <button class="filter-btn active" data-type="values">values</button>
+        <button class="filter-btn active" data-type="messages">messages</button>
+        <button class="filter-btn active" data-type="events">events</button>
+        <button class="filter-btn active" data-type="metadata">metadata</button>
+        <button class="filter-btn active" data-type="debug">debug</button>
+        <button class="filter-btn active" data-type="error">error</button>
+        <button class="filter-btn active" data-type="end">end</button>
+        <button class="filter-btn active" data-type="custom">custom</button>
+        <button class="filter-btn active" data-type="other">other</button>
+        <span class="badge-count" id="evtCount"
+          style="margin-left:auto;background:#e2e8f0;border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700;color:#64748b;">0
+          events</span>
+      </div>
+      <div id="log"></div>
+    </div><!-- /right -->
+
+  </div><!-- /split -->
+
+  <div class="foot">
+    Tip: if CORS blocks <code>file://</code>, run <code>python -m http.server 8080</code> and open
+    <code>http://127.0.0.1:8080/langgraph_dev_api_tester.html</code>
+  </div>
+
+  <script>
+    /* ══════════════════════════════════════════════
+       DOM refs
+    ══════════════════════════════════════════════ */
+    const el = {
+      baseUrl: document.getElementById("baseUrl"),
+      graphId: document.getElementById("graphId"),
+      assistantId: document.getElementById("assistantId"),
+      threadId: document.getElementById("threadId"),
+      userId: document.getElementById("userId"),
+      streamMode: document.getElementById("streamMode"),
+      prompt: document.getElementById("prompt"),
+      authToken: document.getElementById("authToken"),
+      status: document.getElementById("status"),
+      log: document.getElementById("log"),
+      agentOut: document.getElementById("agentOut"),
+      agentEmpty: document.getElementById("agentEmpty"),
+      evtCount: document.getElementById("evtCount"),
+      msgCount: document.getElementById("msgCount"),
+      btnCreateThread: document.getElementById("btnCreateThread"),
+      btnRun: document.getElementById("btnRun"),
+      btnStop: document.getElementById("btnStop"),
+      btnClearAll: document.getElementById("btnClearAll"),
+    };
+
+    /* ══════════════════════════════════════════════
+       Resizer
+    ══════════════════════════════════════════════ */
+    (function setupResizer() {
+      const resizer = document.getElementById("resizer");
+      const left = document.getElementById("left");
+      let dragging = false;
+      let startX, startW;
+      resizer.addEventListener("mousedown", e => {
+        dragging = true; startX = e.clientX; startW = left.offsetWidth;
+        resizer.classList.add("dragging");
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+      });
+      document.addEventListener("mousemove", e => {
+        if (!dragging) return;
+        const w = Math.max(260, Math.min(600, startW + e.clientX - startX));
+        left.style.width = w + "px";
+      });
+      document.addEventListener("mouseup", () => {
+        dragging = false;
+        resizer.classList.remove("dragging");
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      });
+    })();
+
+    /* ══════════════════════════════════════════════
+       State
+    ══════════════════════════════════════════════ */
+    let abortController = null;
+    let eventCounter = 0;
+    let msgCounter = 0;
+    // For streaming AI message accumulation
+    let streamingAiNode = null; // current streaming bubble element
+
+    const activeFilters = new Set(["all", "updates", "values", "messages", "events", "metadata", "debug", "error", "end", "custom", "other"]);
+
+    /* ══════════════════════════════════════════════
+       Event type colors
+    ══════════════════════════════════════════════ */
+    const TYPE_COLORS = {
+      updates: "var(--c-updates)",
+      values: "var(--c-values)",
+      messages: "var(--c-messages)",
+      events: "var(--c-events)",
+      metadata: "var(--c-metadata)",
+      debug: "var(--c-debug)",
+      error: "var(--c-error)",
+      end: "var(--c-end)",
+      custom: "var(--c-custom)",
+    };
+    function badgeColor(t) { return TYPE_COLORS[t] || "var(--c-default)"; }
+    function classifyEvent(t) { return TYPE_COLORS[t] ? t : "other"; }
+
+    /* ══════════════════════════════════════════════
+       Filter logic
+    ══════════════════════════════════════════════ */
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const type = btn.dataset.type;
+        if (type === "all") {
+          const others = [...document.querySelectorAll(".filter-btn[data-type]")].filter(b => b.dataset.type !== "all");
+          const allOn = others.every(b => b.classList.contains("active"));
+          if (allOn) {
+            others.forEach(b => { b.classList.remove("active"); activeFilters.delete(b.dataset.type); });
+            btn.classList.remove("active"); activeFilters.delete("all");
+          } else {
+            document.querySelectorAll(".filter-btn[data-type]").forEach(b => { b.classList.add("active"); activeFilters.add(b.dataset.type); });
+          }
+        } else {
+          if (btn.classList.contains("active")) { btn.classList.remove("active"); activeFilters.delete(type); }
+          else { btn.classList.add("active"); activeFilters.add(type); }
+        }
+        applyFilters();
+      });
+    });
+
+    function applyFilters() {
+      document.querySelectorAll(".evt-card").forEach(card => {
+        card.style.display = (activeFilters.has(card.dataset.evtType) || activeFilters.has("all")) ? "" : "none";
+      });
+    }
+
+    /* ══════════════════════════════════════════════
+       Helpers
+    ══════════════════════════════════════════════ */
+    function headers() {
+      const h = { "Content-Type": "application/json" };
+      const t = el.authToken.value.trim();
+      if (t) h.Authorization = `Bearer ${t}`;
+      return h;
+    }
+    function baseUrl() { return el.baseUrl.value.trim().replace(/\/+$/, ""); }
+    function setStatus(text, kind = "") {
+      el.status.className = kind;
+      el.status.textContent = text;
+    }
+    function getStreamModes() {
+      return el.streamMode.value.split(",").map(s => s.trim()).filter(Boolean);
+    }
+
+    /* append http log line to right panel */
+    function appendHttp(text, cls = "info") {
+      const d = document.createElement("div");
+      d.className = `http-line ${cls}`;
+      d.textContent = text;
+      el.log.appendChild(d);
+      requestAnimationFrame(() => { el.log.scrollTop = el.log.scrollHeight; });
+    }
+
+    /* ══════════════════════════════════════════════
+       SSE event card (right panel)
+    ══════════════════════════════════════════════ */
+    function buildSummary(evtType, parsed) {
+      try {
+        if (evtType === "messages") {
+          const arr = Array.isArray(parsed) ? parsed : [parsed];
+          const first = arr[0];
+          if (Array.isArray(first)) {
+            const content = first[0]?.content;
+            if (typeof content === "string" && content) return `"${content.slice(0, 80)}"`;
+            if (Array.isArray(content)) {
+              const t = content.map(c => c.text || "").join("").slice(0, 80);
+              if (t) return `"${t}"`;
+            }
+          } else if (first?.content !== undefined) {
+            const c = first.content;
+            if (typeof c === "string") return `"${c.slice(0, 80)}"`;
+          }
+          return JSON.stringify(parsed).slice(0, 100);
+        }
+        if (evtType === "updates" || evtType === "values") {
+          const keys = Object.keys(parsed);
+          return `nodes: ${keys.slice(0, 4).join(", ")}${keys.length > 4 ? " …" : ""}`;
+        }
+        if (evtType === "events") {
+          const name = parsed?.name || parsed?.event || "";
+          const runId = parsed?.run_id ? ` run=…${parsed.run_id.slice(-6)}` : "";
+          return `${name}${runId}`;
+        }
+        if (evtType === "metadata") {
+          return parsed?.run_id ? `run_id=${parsed.run_id}` : JSON.stringify(parsed).slice(0, 80);
+        }
+        if (evtType === "error") return parsed?.message || parsed?.error || JSON.stringify(parsed).slice(0, 80);
+        return JSON.stringify(parsed).slice(0, 100);
+      } catch { return ""; }
+    }
+
+    function buildBody(evtType, parsed, dataRaw) {
+      const frag = document.createDocumentFragment();
+
+      if (evtType === "messages" && Array.isArray(parsed)) {
+        const first = parsed[0];
+        if (Array.isArray(first)) {
+          const content = first[0]?.content;
+          let text = "";
+          if (typeof content === "string") text = content;
+          else if (Array.isArray(content)) text = content.map(c => c.text || "").join("");
+          if (text) {
+            const tok = document.createElement("div");
+            tok.className = "msg-tokens";
+            tok.textContent = text;
+            frag.appendChild(tok);
+          }
+        }
+      }
+
+      if ((evtType === "updates" || evtType === "values") && parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        Object.entries(parsed).forEach(([node, data]) => {
+          const lbl = document.createElement("div");
+          lbl.style.cssText = "font-size:10px;font-weight:700;color:#64748b;margin:5px 0 2px;text-transform:uppercase;letter-spacing:.3px;";
+          lbl.textContent = `⬡ ${node}`;
+          frag.appendChild(lbl);
+          const pre = document.createElement("div");
+          pre.className = "json-block";
+          try { pre.textContent = JSON.stringify(data, null, 2); } catch { pre.textContent = String(data); }
+          frag.appendChild(pre);
+        });
+        return frag;
+      }
+
+      if (evtType === "events" && parsed && (parsed.event || parsed.name)) {
+        const meta = document.createElement("div");
+        meta.style.cssText = "font-size:11px;color:#0369a1;margin-bottom:5px;font-weight:600;";
+        meta.textContent = [parsed.event, parsed.name].filter(Boolean).join(" · ");
+        frag.appendChild(meta);
+      }
+
+      const pre = document.createElement("div");
+      pre.className = "json-block";
+      try { pre.textContent = JSON.stringify(parsed, null, 2); } catch { pre.textContent = dataRaw; }
+      frag.appendChild(pre);
+      return frag;
+    }
+
+    function appendEvtCard(id, evtType, dataRaw, parsed, nsLabel) {
+      eventCounter++;
+      el.evtCount.textContent = `${eventCounter} events`;
+      const typeClass = classifyEvent(evtType);
+      // parsed may be pre-unwrapped; fallback parse
+      if (parsed === undefined) {
+        try { parsed = JSON.parse(dataRaw); } catch { parsed = null; }
+      }
+
+      const card = document.createElement("div");
+      card.className = "evt-card";
+      card.dataset.evtType = typeClass;
+      if (!activeFilters.has(typeClass) && !activeFilters.has("all")) card.style.display = "none";
+
+      const hdr = document.createElement("div");
+      hdr.className = "evt-header";
+
+      const badge = document.createElement("span");
+      badge.className = "evt-badge";
+      badge.style.background = badgeColor(evtType);
+      badge.textContent = evtType || "message";
+
+      const num = document.createElement("span");
+      num.className = "evt-num";
+      num.textContent = `#${eventCounter}`;
+
+      // Namespace tag
+      if (nsLabel) {
+        const ns = document.createElement("span");
+        ns.style.cssText = "font-size:9px;background:#e0f2fe;color:#0369a1;border-radius:3px;padding:1px 5px;flex-shrink:0;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+        ns.title = nsLabel;
+        ns.textContent = nsLabel.length > 22 ? "…" + nsLabel.slice(-18) : nsLabel;
+        hdr.appendChild(badge); hdr.appendChild(num); hdr.appendChild(ns);
+      } else {
+        hdr.appendChild(badge); hdr.appendChild(num);
+      }
+
+      const summary = document.createElement("span");
+      summary.className = "evt-summary";
+      summary.textContent = parsed !== null ? buildSummary(evtType, parsed) : (dataRaw || "(empty)");
+
+      const arrow = document.createElement("span");
+      arrow.className = "evt-arrow";
+      arrow.textContent = "▶";
+
+      hdr.appendChild(summary); hdr.appendChild(arrow);
+
+      const body = document.createElement("div");
+      body.className = "evt-body";
+      if (parsed !== null) { body.appendChild(buildBody(evtType, parsed, dataRaw)); }
+      else {
+        const pre = document.createElement("div"); pre.className = "json-block";
+        pre.textContent = dataRaw || "(empty data)"; body.appendChild(pre);
+      }
+
+      hdr.addEventListener("click", () => { body.classList.toggle("open"); arrow.classList.toggle("open"); });
+      card.appendChild(hdr); card.appendChild(body);
+      el.log.appendChild(card);
+      requestAnimationFrame(() => { el.log.scrollTop = el.log.scrollHeight; });
+    }
+
+    /* ══════════════════════════════════════════════
+       Agent output (left panel)
+    ══════════════════════════════════════════════ */
+    function removeEmpty() {
+      if (el.agentEmpty) { el.agentEmpty.remove(); }
+    }
+
+    function createMsgBubble(role, text, nodeLabel) {
+      removeEmpty();
+      msgCounter++;
+      el.msgCount.textContent = msgCounter;
+      const wrap = document.createElement("div");
+      wrap.className = `agent-msg ${role}`;
+      const roleEl = document.createElement("div");
+      roleEl.className = "msg-role";
+      roleEl.textContent = nodeLabel || role;
+      const bubble = document.createElement("div");
+      bubble.className = "msg-bubble";
+      bubble.textContent = text;
+      wrap.appendChild(roleEl); wrap.appendChild(bubble);
+      el.agentOut.appendChild(wrap);
+      requestAnimationFrame(() => { el.agentOut.scrollTop = el.agentOut.scrollHeight; });
+      return bubble;
+    }
+
+    function createStepItem(nodeName, keys) {
+      removeEmpty();
+      const item = document.createElement("div");
+      item.className = "step-item";
+      const dot = document.createElement("div");
+      dot.className = "step-dot";
+      dot.style.background = "var(--c-updates)";
+      const info = document.createElement("div");
+      info.className = "step-info";
+      const nameEl = document.createElement("div");
+      nameEl.className = "step-node";
+      nameEl.textContent = `⬡ ${nodeName}`;
+      const keysEl = document.createElement("div");
+      keysEl.className = "step-keys";
+      keysEl.textContent = keys;
+      info.appendChild(nameEl); info.appendChild(keysEl);
+      item.appendChild(dot); item.appendChild(info);
+      el.agentOut.appendChild(item);
+      requestAnimationFrame(() => { el.agentOut.scrollTop = el.agentOut.scrollHeight; });
+    }
+
+    // Streaming AI bubble — accumulate tokens
+    let currentAiBubble = null;
+    let currentAiText = "";
+
+    function flushAiBubble() {
+      if (currentAiBubble) {
+        currentAiBubble.classList.remove("stream-cursor");
+        currentAiBubble = null;
+        currentAiText = "";
+      }
+    }
+
+    function processAgentEvent(evtType, parsed, nsLabel) {
+      if (evtType === "messages-tuple") {
+        evtType = "messages";
+      }
+
+      if (!parsed) return;
+      console.log("[AGENT]", evtType, nsLabel, JSON.stringify(parsed)?.slice(0, 300));
+
+      /* ─────────────────────────────────────────────
+         messages stream_mode:
+         After unwrap, parsed is one of:
+           A) [msg, metadata]          — messages tuple (single token chunk)
+           B) [[msg,meta], ...]        — array of tuples
+           C) {id, type, content, ...} — direct message object (non-subgraph)
+      
+         关键：token 在 chunk.content 或 chunk.text 或 chunk.delta 中
+      ───────────────────────────────────────────── */
+      if (evtType === "messages") {
+        // Case A: [msg, metadata] tuple
+        if (Array.isArray(parsed) && parsed.length === 2 && !Array.isArray(parsed[0])) {
+          const msg = parsed[0];
+          const meta = parsed[1];
+          _handleMsgToken(msg, meta, nsLabel);
+          return;
+        }
+        // Case B: array of tuples (batch)
+        if (Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0])) {
+          parsed.forEach(tuple => {
+            if (Array.isArray(tuple)) _handleMsgToken(tuple[0], tuple[1], nsLabel);
+          });
+          return;
+        }
+        // Case C: direct message object
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          _handleMsgToken(parsed, {}, nsLabel);
+          return;
+        }
+        return;
+      }
+
+      /* ─────────────────────────────────────────────
+         updates stream_mode:
+         After unwrap, parsed is { nodeName: nodeData, ... }
+      ───────────────────────────────────────────── */
+      if (evtType === "updates" && parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        Object.entries(parsed).forEach(([node, data]) => {
+          if (!data || typeof data !== "object") return;
+
+          // Has messages array — render each
+          const msgs = data.messages;
+          if (Array.isArray(msgs) && msgs.length > 0) {
+            msgs.forEach(m => {
+              if (!m) return;
+              // m can be a dict or [dict, meta]
+              const msgObj = Array.isArray(m) ? m[0] : m;
+              if (!msgObj) return;
+              const role = msgObj.type === "human" ? "user" : msgObj.type === "tool" ? "tool" : "ai";
+              const content = _extractContent(msgObj.content);
+              if (content) {
+                if (role === "ai") { flushAiBubble(); }
+                createMsgBubble(role, content, nsLabel || node);
+              }
+            });
+            return;
+          }
+
+          // Show as step timeline
+          const keys = Object.keys(data).filter(k => k !== "__root__").join(", ") || "(empty)";
+          createStepItem(nsLabel ? `${nsLabel} › ${node}` : node, keys);
+        });
+        return;
+      }
+
+      /* events stream_mode — look for on_chat_model_stream for token display */
+      if (evtType === "events" && parsed && typeof parsed === "object") {
+        const evtName = parsed.event || "";
+        if (evtName === "on_chat_model_stream") {
+          const chunk = parsed?.data?.chunk;
+          if (chunk) {
+            const content = _extractContent(chunk.content ?? chunk.text ?? chunk.delta ?? "");
+            if (content) {
+              const nodeLabel = parsed?.metadata?.langgraph_node || nsLabel || "AI";
+              if (!currentAiBubble) {
+                removeEmpty();
+                msgCounter++;
+                el.msgCount.textContent = msgCounter;
+                const wrap = document.createElement("div");
+                wrap.className = "agent-msg ai";
+                const roleEl = document.createElement("div");
+                roleEl.className = "msg-role";
+                roleEl.textContent = nodeLabel;
+                const bubble = document.createElement("div");
+                bubble.className = "msg-bubble stream-cursor";
+                wrap.appendChild(roleEl); wrap.appendChild(bubble);
+                el.agentOut.appendChild(wrap);
+                currentAiBubble = bubble;
+                currentAiText = "";
+              }
+              currentAiText += content;
+              currentAiBubble.textContent = currentAiText;
+              requestAnimationFrame(() => { el.agentOut.scrollTop = el.agentOut.scrollHeight; });
+              return;
+            }
+          }
+        }
+        if (evtName === "on_chat_model_end" || evtName === "on_chain_end") {
+          flushAiBubble();
+        }
+        return;
+      }
+
+      /* ── end ── */
+      if (evtType === "end") {
+        flushAiBubble();
+        removeEmpty();
+        const end = document.createElement("div");
+        end.style.cssText = "text-align:center;padding:8px 0;font-size:11px;color:var(--accent);font-weight:600;";
+        end.textContent = "✓ Run completed";
+        el.agentOut.appendChild(end);
+        requestAnimationFrame(() => { el.agentOut.scrollTop = el.agentOut.scrollHeight; });
+        return;
+      }
+
+      /* ── error ── */
+      if (evtType === "error") {
+        flushAiBubble();
+        createMsgBubble("system", `⚠ Error: ${parsed?.message || parsed?.error || JSON.stringify(parsed)}`, "error");
+        return;
+      }
+    }
+
+    /* ── Helper: extract text content from various formats ── */
+    function _extractContent(content) {
+      if (!content) return "";
+      if (typeof content === "string") return content;
+      if (Array.isArray(content)) {
+        return content.map(c => {
+          if (typeof c === "string") return c;
+          return c?.text || c?.content || "";
+        }).join("");
+      }
+      // Handle {type: "text", text: "..."} format
+      if (content && typeof content === "object") {
+        return content.text || content.content || "";
+      }
+      return "";
+    }
+
+    /* ── Helper: handle a single message token chunk ── */
+    function _handleMsgToken(msg, meta, nsLabel) {
+      if (!msg) return;
+
+      // Token 可能在 content/text/delta 字段中
+      const content = _extractContent(msg.content ?? msg.text ?? msg.delta ?? "");
+      if (!content) return;
+
+      const msgType = msg.type || msg.role || "";
+      const isHuman = msgType === "human" || msgType === "user";
+      const isTool = msgType === "tool";
+      const nodeLabel = meta?.metadata?.langgraph_node
+        || meta?.langgraph_node
+        || msg?.name
+        || nsLabel
+        || null;
+
+      if (isHuman) {
+        flushAiBubble();
+        createMsgBubble("user", content, nodeLabel || "User");
+        return;
+      }
+      if (isTool) {
+        flushAiBubble();
+        createMsgBubble("tool", content, nodeLabel || "Tool");
+        return;
+      }
+      // AI / assistant token — stream into bubble
+      if (!currentAiBubble) {
+        removeEmpty();
+        msgCounter++;
+        el.msgCount.textContent = msgCounter;
+        const wrap = document.createElement("div");
+        wrap.className = "agent-msg ai";
+        const roleEl = document.createElement("div");
+        roleEl.className = "msg-role";
+        roleEl.textContent = nodeLabel || "AI";
+        const bubble = document.createElement("div");
+        bubble.className = "msg-bubble stream-cursor";
+        wrap.appendChild(roleEl); wrap.appendChild(bubble);
+        el.agentOut.appendChild(wrap);
+        currentAiBubble = bubble;
+        currentAiText = "";
+      }
+      currentAiText += content;
+      currentAiBubble.textContent = currentAiText;
+      requestAnimationFrame(() => { el.agentOut.scrollTop = el.agentOut.scrollHeight; });
+    }
+
+    /* ══════════════════════════════════════════════
+       Unwrap stream_subgraphs tuple: [namespace, data] → data
+       When stream_subgraphs=true, each SSE data payload is either:
+         - [namespace_array, actual_data]   (subgraph events)
+         - actual_data                       (root graph events)
+       
+       关键：namespace 是字符串数组（如 ["subgraph_name", "node"]），
+       data 才是真正的 payload（updates/messages/events 等）
+    ══════════════════════════════════════════════ */
+    function unwrapSubgraph(parsed) {
+      // LangGraph stream_subgraphs=true wraps as [namespace, data]
+      // namespace is an array of strings, data is the actual payload
+      if (
+        Array.isArray(parsed) &&
+        parsed.length === 2 &&
+        Array.isArray(parsed[0]) &&
+        parsed[0].every(x => typeof x === "string") &&
+        parsed[1] !== undefined
+      ) {
+        return { namespace: parsed[0], data: parsed[1] };
+      }
+      // Also handle flat array case where first element looks like a namespace string array
+      return { namespace: [], data: parsed };
+    }
+
+    /* ══════════════════════════════════════════════
+       Main event handler
+    ══════════════════════════════════════════════ */
+    function appendEvent(id, evtType, dataObj) {
+      // dataObj 是已经解析好的 JSON 对象（或字符串）
+      let rawParsed = dataObj;
+      if (typeof dataObj === "string") {
+        try { rawParsed = JSON.parse(dataObj); } catch { rawParsed = null; }
+      }
+
+      // Unwrap stream_subgraphs tuple: [namespace, data] → data
+      const { namespace, data: parsed } = unwrapSubgraph(rawParsed);
+      const nsLabel = namespace.length ? namespace.join(" › ") : null;
+
+      // Right: SSE card — show unwrapped data, annotate namespace
+      const dataRaw = typeof dataObj === "string" ? dataObj : JSON.stringify(dataObj);
+      appendEvtCard(id, evtType, dataRaw, parsed, nsLabel);
+      // Left: agent output
+      processAgentEvent(evtType, parsed, nsLabel);
+    }
+
+    /* ══════════════════════════════════════════════
+       SSE parser - 解析单个 SSE block
+       返回 { id, event, data, rawData } 或 null
+    ══════════════════════════════════════════════ */
+    function parseSseBlock(block) {
+      if (!block.trim()) return null;
+
+      let id = null, event = "message", retry = null;
+      const dataLines = [];
+      const commentLines = [];
+
+      for (const raw of block.split(/\r?\n/)) {
+        if (!raw) continue;
+        // 注释行：以 ":" 开头
+        if (raw.startsWith(":")) {
+          commentLines.push(raw.slice(1).trim());
+          continue;
+        }
+
+        const colon = raw.indexOf(":");
+        const field = (colon === -1 ? raw : raw.slice(0, colon)).trim();
+        const value = (colon === -1 ? "" : raw.slice(colon + 1)).trimStart();
+
+        if (field === "id") id = value;
+        else if (field === "event") event = value;
+        else if (field === "data") dataLines.push(value);
+        else if (field === "retry") {
+          try { retry = parseInt(value, 10); } catch { retry = null; }
+        }
+      }
+
+      const rawData = dataLines.join("\n");
+      let data = rawData;
+      // 尝试解析 JSON
+      if (rawData && rawData !== "[DONE]") {
+        try { data = JSON.parse(rawData); } catch { /* 保持字符串 */ }
+      }
+
+      return { id, event, data, rawData, retry, comment: commentLines.join(" | ") || null };
+    }
+
+    /* ══════════════════════════════════════════════
+       Create thread
+    ══════════════════════════════════════════════ */
+    async function createThreadIfNeeded(force = false) {
+      if (!force && el.threadId.value.trim()) return el.threadId.value.trim();
+      const threadId = el.threadId.value.trim() || (crypto.randomUUID ? crypto.randomUUID() : `t-${Date.now()}`);
+      const body = {
+        thread_id: threadId, if_exists: "do_nothing",
+        metadata: { source: "html-dev-tester", graph_id: el.graphId.value.trim() || "multi_agent" },
+      };
+      appendHttp(`POST /threads`, "req");
+      appendHttp(JSON.stringify(body), "req");
+      const res = await fetch(`${baseUrl()}/threads`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+      const text = await res.text();
+      if (!res.ok) throw new Error(`Create thread failed (${res.status}): ${text}`);
+      let json = {};
+      try { json = JSON.parse(text); } catch { }
+      const actualId = json.thread_id || threadId;
+      el.threadId.value = actualId;
+      appendHttp(`← ${text.slice(0, 200)}`, "resp");
+      setStatus(`Thread ready: ${actualId}`, "ok");
+      return actualId;
+    }
+
+    /* ══════════════════════════════════════════════
+       Start stream run
+    ══════════════════════════════════════════════ */
+    async function startStreamRun() {
+      if (abortController) { setStatus("A run is already in progress", "warn"); return; }
+      el.btnRun.disabled = true;
+      el.btnStop.disabled = false;
+      abortController = new AbortController();
+      eventCounter = 0; el.evtCount.textContent = "0 events";
+
+      try {
+        const threadId = await createThreadIfNeeded(false);
+        const assistantId = el.assistantId.value.trim() || el.graphId.value.trim() || "multi_agent";
+        const streamMode = getStreamModes();
+
+        const body = {
+          assistant_id: assistantId,
+          input: {
+            user_id: el.userId.value.trim() || "u1",
+            thread_id: threadId,
+            messages: [{ role: "user", content: el.prompt.value.trim() }],
+          },
+          config: { configurable: { thread_id: threadId } },
+          metadata: { source: "html-dev-tester", graph_id: el.graphId.value.trim() || "multi_agent" },
+          stream_mode: streamMode.length ? streamMode : ["updates", "events"],
+          stream_subgraphs: true,
+          multitask_strategy: "enqueue",
+          on_disconnect: "continue",
+        };
+
+        const url = `${baseUrl()}/threads/${encodeURIComponent(threadId)}/runs/stream`;
+        appendHttp(`POST ${url.replace(baseUrl(), "")}`, "req");
+        appendHttp(JSON.stringify(body, null, 2), "req");
+        setStatus("Run started — streaming…", "ok");
+
+        const res = await fetch(url, { method: "POST", headers: headers(), body: JSON.stringify(body), signal: abortController.signal });
+        if (!res.ok) { const t = await res.text(); throw new Error(`Run stream failed (${res.status}): ${t}`); }
+        if (!res.body) throw new Error("ReadableStream not available.");
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+        const yieldFrame = () => new Promise(r => setTimeout(r, 0));
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          // 统一换行，兼容 \r\n\r\n 和 \n\n
+          buffer = buffer.replace(/\r\n/g, "\n");
+          while (true) {
+            const splitIdx = buffer.indexOf("\n\n");
+            if (splitIdx === -1) break;
+
+            const block = buffer.slice(0, splitIdx);
+            buffer = buffer.slice(splitIdx + 2);
+
+            const evt = parseSseBlock(block);
+            if (evt) {
+              console.log("[SSE RAW]", {
+                event: evt.event,
+                rawData: evt.rawData?.slice(0, 200),
+                dataParsed: evt.data,
+              });
+
+              let eventType = evt.event || "message";
+              let eventData = evt.data;
+
+              // 兼容上游 event=message，data 内再包一层 {event, data}
+              if (
+                eventType === "message" &&
+                eventData &&
+                typeof eventData === "object" &&
+                eventData.event &&
+                "data" in eventData
+              ) {
+                eventType = eventData.event;
+                eventData = eventData.data;
+              }
+
+              // 把 messages-tuple 统一当成 messages 处理
+              if (eventType === "messages-tuple") {
+                eventType = "messages";
+              }
+
+              console.log("[SSE PROCESSED]", {
+                eventType,
+                isArray: Array.isArray(eventData),
+                firstItem: Array.isArray(eventData) ? eventData[0] : eventData,
+              });
+
+              appendEvent(evt.id, eventType, eventData);
+              await yieldFrame();
+            }
+          }
+        }
+        if (buffer.trim()) {
+          const evt = parseSseBlock(buffer);
+          if (evt) {
+            let eventType = evt.event || "message";
+            let eventData = evt.data;
+
+            if (
+              eventType === "message" &&
+              eventData &&
+              typeof eventData === "object" &&
+              eventData.event &&
+              "data" in eventData
+            ) {
+              eventType = eventData.event;
+              eventData = eventData.data;
+            }
+
+            if (eventType === "messages-tuple") {
+              eventType = "messages";
+            }
+
+            appendEvent(evt.id, eventType, eventData);
+          }
+        }
+        flushAiBubble();
+        setStatus(`Stream completed — ${eventCounter} events`, "ok");
+      } catch (err) {
+        flushAiBubble();
+        if (err.name === "AbortError") {
+          setStatus("Run aborted by user", "warn");
+          appendHttp("[Stream aborted by user]", "info");
+        } else {
+          setStatus("Run failed: " + (err.message || err), "err");
+          appendHttp(`[ERROR] ${err.message || err}`, "err");
+        }
+      } finally {
+        abortController = null;
+        el.btnRun.disabled = false;
+        el.btnStop.disabled = true;
+      }
+    }
+
+    /* ══════════════════════════════════════════════
+       Button handlers
+    ══════════════════════════════════════════════ */
+    el.btnCreateThread.addEventListener("click", async () => {
+      try { await createThreadIfNeeded(true); }
+      catch (err) { setStatus("Create thread failed", "err"); appendHttp(`[ERROR] ${err.message || err}`, "err"); }
+    });
+    el.btnRun.addEventListener("click", startStreamRun);
+    el.btnStop.addEventListener("click", () => { if (abortController) abortController.abort(); });
+    el.btnClearAll.addEventListener("click", () => {
+      el.log.innerHTML = "";
+      el.agentOut.innerHTML = '<div class="agent-empty" id="agentEmpty">Agent output will appear here during stream…</div>';
+      el.agentEmpty = document.getElementById("agentEmpty");
+      eventCounter = 0; msgCounter = 0; currentAiBubble = null; currentAiText = "";
+      el.evtCount.textContent = "0 events";
+      el.msgCount.textContent = "0";
+      setStatus("Cleared");
+    });
+  </script>
+</body>
+
+</html>
