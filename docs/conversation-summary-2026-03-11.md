@@ -13,13 +13,13 @@
 
 2. 测试页面调整
 
-- `tests/stream_test.html` 已升级为完整流式调试页，支持：
+- `apps/runtime-langgraph/tests/stream_test.html` 已升级为完整流式调试页，支持：
   - SSE 事件时间线
   - 消息/token 输出区域
   - 事件类型过滤（updates/messages/events/debug/metadata/error/custom 等）
   - 子图流式事件展示
 - 页面访问路径统一为：
-  - `http://127.0.0.1:8080/tests/stream_test.html`
+  - `http://127.0.0.1:8080/apps/runtime-langgraph/tests/stream_test.html`
 
 3. 启动方式调整
 
@@ -40,7 +40,7 @@
 1. 日志里 `Application started up` 说明服务已启动成功。
 2. `Exception in thread Thread-3 (_open_browser)` 仅是自动开浏览器失败，不影响 API 可用性。
 3. `3 changes detected` 为热重载文件监听日志，不是服务故障。
-4. 页面打不开的直接原因是 `8080` 未启动静态文件服务，而非 `tests/stream_test.html` 文件不存在。
+4. 页面打不开的直接原因是 `8080` 未启动静态文件服务，而非 `apps/runtime-langgraph/tests/stream_test.html` 文件不存在。
 
 ## 页面事件解析结论（关键）
 
@@ -67,7 +67,7 @@
 启动 LangGraph 服务：
 
 ```bash
-uv run python main.py serve --no-reload
+cd apps/runtime-langgraph && uv run python main.py serve --no-reload
 ```
 
 启动静态页面服务：
@@ -78,5 +78,5 @@ python3 -m http.server 8080
 
 打开测试页：
 
-- `http://127.0.0.1:8080/tests/stream_test.html`
+- `http://127.0.0.1:8080/apps/runtime-langgraph/tests/stream_test.html`
 

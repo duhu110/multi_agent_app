@@ -5,7 +5,7 @@
 ## 1. 当前测试目标
 
 - 验证 `multi_agent` 图在 LangGraph Dev API 下的流式事件输出是否完整。
-- 在 `tests/stream_test.html` 中观察：
+- 在 `apps/runtime-langgraph/tests/stream_test.html` 中观察：
   - token/消息增量（`messages` / `messages-tuple`）
   - 状态更新（`updates` / `values`）
   - 执行轨迹事件（`events` / `debug` / `metadata` / `error`）
@@ -16,13 +16,13 @@
 1) 启动 LangGraph 服务：
 
 ```bash
-uv run python main.py serve
+cd apps/runtime-langgraph && uv run python main.py serve
 ```
 
 2) 打开调试页：
 
 - 推荐：`python -m http.server 8080`
-- 打开 `http://127.0.0.1:8080/tests/stream_test.html`
+- 打开 `http://127.0.0.1:8080/apps/runtime-langgraph/tests/stream_test.html`
 
 3) 点击：
 
@@ -47,7 +47,7 @@ uv run python main.py serve
 
 当前仓库的标准调试入口为：
 
-- Web 可视化：`tests/stream_test.html`
-- CLI 流式：`main.py stream`
+- Web 可视化：`apps/runtime-langgraph/tests/stream_test.html`
+- CLI 流式：`apps/runtime-langgraph/main.py stream`
 
 这两者均直接对接 LangGraph Dev API，不经过额外网关层。
