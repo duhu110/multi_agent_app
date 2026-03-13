@@ -10,3 +10,14 @@ wheels/
 .venv
 
 .langgraph_api/
+
+.qoder/
+
+.agents/
+
+.claude/
+
+
+.superpowers/
+
+
