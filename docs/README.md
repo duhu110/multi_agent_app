@@ -15,6 +15,20 @@
 
 ## 当前可运行部分（runtime-langgraph）
 
+## 一键环境初始化（推荐）
+
+在仓库根目录执行：
+
+```bash
+bash scripts/init_env.sh
+```
+
+该脚本会：
+
+- 检查 `python3` 是否存在
+- 若检测到 `uv`，自动执行 `apps/runtime-langgraph` 的依赖同步
+- 若检测到 `bun` 或 `npm`，自动安装 `apps/web` 依赖
+
 1. 进入运行时目录
 
 ```bash
