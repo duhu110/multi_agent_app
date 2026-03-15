@@ -1,0 +1,57 @@
+/* 统一字体族：根据 unicode-range 自动选择中英文字体 */
+
+/* 中文 - 阿里巴巴普惠体 */
+@font-face {
+  font-family: 'Alibaba';
+  src: url('/fonts/AlibabaPuHuiTi-3-55-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+4E00-9FFF, U+3400-4DBF, U+20000-2A6DF, U+2A700-2B73F, U+2B740-2B81F, U+2B820-2CEAF, U+F900-FAFF, U+2F800-2FA1F;
+}
+
+@font-face {
+  font-family: 'Alibaba';
+  src: url('/fonts/AlibabaPuHuiTi-3-75-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+4E00-9FFF, U+3400-4DBF, U+20000-2A6DF, U+2A700-2B73F, U+2B740-2B81F, U+2B820-2CEAF, U+F900-FAFF, U+2F800-2FA1F;
+}
+
+@font-face {
+  font-family: 'Alibaba';
+  src: url('/fonts/AlibabaPuHuiTi-3-85-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+4E00-9FFF, U+3400-4DBF, U+20000-2A6DF, U+2A700-2B73F, U+2B740-2B81F, U+2B820-2CEAF, U+F900-FAFF, U+2F800-2FA1F;
+}
+
+/* 英文 - 阿里巴巴无衬线体 */
+@font-face {
+  font-family: 'Alibaba';
+  src: url('/fonts/AlibabaSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0020-007F, U+00A0-00FF, U+0100-017F, U+0180-024F;
+}
+
+@font-face {
+  font-family: 'Alibaba';
+  src: url('/fonts/AlibabaSans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0020-007F, U+00A0-00FF, U+0100-017F, U+0180-024F;
+}
+
+@font-face {
+  font-family: 'Alibaba';
+  src: url('/fonts/AlibabaSans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0020-007F, U+00A0-00FF, U+0100-017F, U+0180-024F;
+}

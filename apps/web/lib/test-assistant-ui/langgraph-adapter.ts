@@ -98,6 +98,51 @@ const createTraceEvents = (raw: unknown, ts: string): AgentRunEvent[] => {
   const rec = asRecord(raw);
   if (!rec) return [];
 
+  // Handle debug checkpoint events from stream_mode="debug"
+  const type = typeof rec.type === "string" ? rec.type : "";
+  if (type === "checkpoint") {
+    const payload = asRecord(rec.payload) ?? {};
+    const values = asRecord(payload.values) ?? {};
+    const next = Array.isArray(payload.next) ? payload.next : [];
+    const metadata = asRecord(payload.metadata) ?? {};
+    const runId = extractRunId(metadata) ?? extractRunId(payload);
+
+    const events: AgentRunEvent[] = [];
+
+    // Add running nodes from "next"
+    for (const nodeId of next) {
+      if (typeof nodeId === "string") {
+        events.push({ type: "node_started", runId, nodeId, label: nodeId, ts });
+      }
+    }
+
+    // Add completed nodes from values
+    for (const [key, value] of Object.entries(values)) {
+      if (key.startsWith("__")) continue;
+      const nodeId = extractNodeId(value, key);
+      events.push({ type: "node_completed", runId, nodeId, output: value, ts });
+    }
+
+    return events;
+  }
+
+  // Handle task events from stream_mode="debug"
+  if (type === "task") {
+    const payload = asRecord(rec.payload) ?? {};
+    const name = typeof payload.name === "string" ? payload.name : "unknown";
+    const result = payload.result;
+    const error = payload.error;
+
+    if (error) {
+      return [{ type: "node_failed", nodeId: name, error: String(error), ts }];
+    }
+    if (result !== undefined) {
+      return [{ type: "node_completed", nodeId: name, output: result, ts }];
+    }
+    return [{ type: "node_started", nodeId: name, label: name, ts }];
+  }
+
+  // Legacy events format (stream_mode="events")
   const eventName = typeof rec.event === "string" ? rec.event : "";
   const data = asRecord(rec.data) ?? {};
   const metadata = asRecord(rec.metadata) ?? {};
@@ -166,6 +211,54 @@ const createTraceEvents = (raw: unknown, ts: string): AgentRunEvent[] => {
   return [];
 };
 
+const createValuesEvents = (raw: unknown, ts: string): AgentRunEvent[] => {
+  const rec = asRecord(raw);
+  if (!rec) return [];
+
+  const events: AgentRunEvent[] = [];
+
+  // Try to extract node information from the state values
+  const checkpoint = asRecord(rec.checkpoint);
+  if (checkpoint) {
+    const channelValues = asRecord(checkpoint.channel_values);
+    if (channelValues) {
+      // Look for node execution info in channel values
+      for (const [key, value] of Object.entries(channelValues)) {
+        if (key.startsWith("__") || value === null || value === undefined) continue;
+
+        // Check if this looks like a node output
+        const valRec = asRecord(value);
+        if (valRec && (valRec.node || valRec.__pregel_task_path)) {
+          const nodeId = extractNodeId(valRec, key);
+          events.push({ type: "node_completed", nodeId, output: value, ts });
+        }
+      }
+    }
+  }
+
+  // Also try to get node info from the values directly
+  const values = asRecord(rec.values);
+  if (values) {
+    for (const [key, value] of Object.entries(values)) {
+      if (key.startsWith("__")) continue;
+      if (typeof value === "object" && value !== null) {
+        const nodeId = extractNodeId(value, key);
+        events.push({ type: "node_completed", nodeId, output: value, ts });
+      }
+    }
+  }
+
+  // Handle next/pending nodes
+  const next = Array.isArray(rec.next) ? rec.next : [];
+  for (const nodeId of next) {
+    if (typeof nodeId === "string") {
+      events.push({ type: "node_started", nodeId, label: nodeId, ts });
+    }
+  }
+
+  return events;
+};
+
 export function normalizeLangGraphEvent(eventType: string, raw: unknown, ts = new Date().toISOString()): AgentRunEvent[] {
   if (eventType === "messages" || eventType === "messages-tuple") {
     const events = createMessageEvents(raw, ts);
@@ -174,6 +267,11 @@ export function normalizeLangGraphEvent(eventType: string, raw: unknown, ts = ne
 
   if (eventType === "updates") {
     const events = createUpdateEvents(raw, ts);
+    return events.length ? events : [{ type: "unknown", raw, ts }];
+  }
+
+  if (eventType === "values") {
+    const events = createValuesEvents(raw, ts);
     return events.length ? events : [{ type: "unknown", raw, ts }];
   }
 

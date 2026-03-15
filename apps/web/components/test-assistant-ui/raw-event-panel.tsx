@@ -12,8 +12,8 @@ export function RawEventPanel({ events }: { events: RawStreamEvent[] }) {
             {events
               .slice()
               .reverse()
-              .map((event) => (
-                <pre key={`${event.seq}-${event.ts}`} className="bg-muted overflow-auto rounded p-2">
+              .map((event, index) => (
+                <pre key={`${event.seq}-${event.ts}-${index}`} className="bg-muted overflow-auto rounded p-2">
 {`#${event.seq} ${event.eventType} @ ${event.ts}\n${JSON.stringify(event.raw, null, 2)}`}
                 </pre>
               ))}

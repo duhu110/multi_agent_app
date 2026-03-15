@@ -109,6 +109,12 @@ export type ExecutionState = {
   lastError?: string;
 };
 
+export type ChatMessage = {
+  id: string;
+  role: ChatRole;
+  content: string;
+};
+
 export type LangGraphConfig = {
   apiUrl: string;
   assistantId: string;

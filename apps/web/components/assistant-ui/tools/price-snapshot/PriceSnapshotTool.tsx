@@ -1,0 +1,43 @@
+"use client";
+
+import { makeAssistantToolUI } from "@assistant-ui/react";
+import { PriceSnapshot } from "./price-snapshot";
+
+type PriceSnapshotToolArgs = {
+  ticker: string;
+};
+
+type PriceSnapshotToolResult = {
+  snapshot: {
+    price: number;
+    day_change: number;
+    day_change_percent: number;
+    time: string;
+  };
+};
+
+export const PriceSnapshotTool = makeAssistantToolUI<PriceSnapshotToolArgs, string>({
+  toolName: "price_snapshot",
+  render: function PriceSnapshotUI({ args, result }) {
+    let resultObj: PriceSnapshotToolResult | { error: string };
+    try {
+      resultObj = result ? JSON.parse(result) : {};
+    } catch (_e) {
+      resultObj = { error: result! };
+    }
+
+    return (
+      <div className="mb-4 flex flex-col items-center gap-2">
+        <pre className="whitespace-pre-wrap break-all text-center text-xs text-muted-foreground">
+          price_snapshot({JSON.stringify(args)})
+        </pre>
+        {"snapshot" in resultObj && (
+          <PriceSnapshot ticker={args.ticker} {...resultObj.snapshot} />
+        )}
+        {"error" in resultObj && (
+          <p className="text-red-500 text-sm">{resultObj.error}</p>
+        )}
+      </div>
+    );
+  },
+});
