@@ -84,6 +84,7 @@ const getConfig = (): LangGraphConfig => ({
   graphId: process.env.NEXT_PUBLIC_LANGGRAPH_GRAPH_ID ?? "multi_agent",
 });
 
+// Simple Mode - assistant-ui stockbroker UI
 export default function SimpleAssistantPage() {
   const config = useMemo(() => getConfig(), []);
   const [threadId, setThreadId] = useState("");
