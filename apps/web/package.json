@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/langchain": "^2.0.122",
+    "@ai-sdk/react": "^3.0.118",
     "@assistant-ui/react": "^0.12.17",
     "@assistant-ui/react-langgraph": "^0.13.3",
     "@assistant-ui/react-markdown": "^0.12.5",
