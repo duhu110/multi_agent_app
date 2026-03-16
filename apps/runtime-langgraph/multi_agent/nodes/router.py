@@ -8,7 +8,7 @@ from multi_agent.core.state import AppState
 from multi_agent.shared.json_utils import extract_json_object
 
 
-ALLOWED = {"rag", "web", "sql", "action"}
+ALLOWED = {"rag", "web", "sql", "action", "chat"}
 
 
 def _extract_json(text: str) -> dict:
