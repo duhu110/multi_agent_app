@@ -31,7 +31,15 @@ def _normalize_routes(raw_agents) -> list[str]:
 def router_node(state: AppState) -> AppState:
     llm = get_llm(temperature=0)
 
-    user_request = state.get("task_input", "")
+    # user_request = state.get("task_input", "")
+    # 优先从 messages 中获取最后一条用户的消息内容
+    messages = state.get("messages", [])
+    if messages:
+        user_request = messages[-1].content
+    else:
+        user_request = state.get("task_input", "")
+
+
     memory = state.get("long_term_memory", [])
 
     payload = f"""
@@ -49,7 +57,8 @@ Latest user request:
         ]
     )
 
-    parsed = _extract_json(result.content if isinstance(result.content, str) else str(result.content))
+    parsed = _extract_json(result.content if isinstance(
+        result.content, str) else str(result.content))
     raw_agents = parsed.get("selected_agents", parsed.get("routes", ["rag"]))
     selected_agents = _normalize_routes(raw_agents)
 
